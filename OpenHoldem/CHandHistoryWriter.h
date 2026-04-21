@@ -24,6 +24,7 @@
 #include "CVirtualSymbolEngine.h"
 
 const int kMaxLines = 256;
+using namespace std;
 
 class CHandHistoryWriter: public CVirtualSymbolEngine {
  public:
@@ -37,6 +38,9 @@ class CHandHistoryWriter: public CVirtualSymbolEngine {
 	void UpdateOnNewRound();
 	void UpdateOnMyTurn();
 	void UpdateOnHeartbeat();
+	const string setDate();
+	const string TornamentName();
+
  public:
 	// Public accessors
 	bool EvaluateSymbol(const CString name, double *result, bool log = false);
@@ -47,21 +51,71 @@ public:
   void PostsSmallBlind(int chair);
   void PostsBigBlind(int chair);
   void PostsAnte(int chair);
+
  public:
   void Checks(int chair);
   void Folds(int chair);
   void Calls(int chair);
   void Raises(int chair);
+  void FinalTurnScan();
+  bool Winner();
+  bool ShowAllinCards();
+  bool DealPhase();
+  bool PotVsTotalBet();
+
+  
+  
  public:
   void WinsUncontested(int chair);
  private:
   CString PlayerName(int chair);
+  long int PreviusBet[kMaxNumberOfPlayers];
+  long int MaxBet;
+  long int HandNumber;
+  int Actions[kMaxNumberOfPlayers];
+  
+  long int MaxPlayerTotalBet;
+  bool IsBigBlind[kMaxNumberOfPlayers];
+  bool HasFolded[kMaxNumberOfPlayers];
+  bool IsAllWin[kMaxNumberOfPlayers];
+  bool IsSmallBlind[kMaxNumberOfPlayers];
+  bool PlayerShowDown[kMaxNumberOfPlayers];
+  bool PlayerStartRound[kMaxNumberOfPlayers];
+  CString PlayerCard1[kMaxNumberOfPlayers];
+  CString PlayerCard2[kMaxNumberOfPlayers];
+  bool IsShowDown;
+  bool ShowDownStep1;
+  bool ShowDownFinish;
+  bool FinalWinnerScan;
+  bool Finish;
+  bool MinWinnerShow;
+  bool MaxWinnerShow;
+  long int PlayerTotalBet[kMaxNumberOfPlayers];
+  long int PlayerStack[kMaxNumberOfPlayers];
+  bool PlayerPotShow[kMaxNumberOfPlayers];
+  int MaxActions;
+  int Round_First_Chair;
+  int Round_Last_Chair;
+  int QtyActionsRound;
+  int QtyPlaying;
+  int QtyAllwin;
+  int ActualChair;
+  long int TotalBetsOnGame;
+  long int WinnerPots;
+  long int MaxWinnerPots;
+  long int MinWinnerPots;
+  long int MiddleLowWinnerPots;
+  long int MiddleHighWinnerPots;
+  int QtyWinnerPots;
+  bool PlayerWinner[kMaxNumberOfPlayers];
  private:
   void WriteHistory();
+  
 private:
   int _lines_collected;
   CString _handhistory_data[kMaxLines];
   CString _message;
+
 };
 
 extern CHandHistoryWriter *p_handhistory_writer;

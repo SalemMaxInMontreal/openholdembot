@@ -147,23 +147,23 @@ double CHeartbeatDelay::SleepingFactorActiveButFolded() {
     // Folded
     // Multiway, not participating.
     // Hand will continue for some time.
-    return 3.0;
+    return 1.0;
   } else if (p_engine_container->symbol_engine_active_dealt_playing()->nopponentsplaying() >= 2) {
     // Folded
     // Headsup, not participating.
     if (p_engine_container->symbol_engine_checks_bets_folds()->nopponentschecking() >= 2) {
       // At least 2 players did not yet act (or check)
       // Hand will continue for some time    }
-      return 2.5;
+      return 1.0;
     }
     else if (BETROUND <= kBetroundTurn) {
       // Not yet river
       // Hand will probably continue for some time
-      return 2.0;
+      return 1.0;
     } else {
       // Heads-up at the river, at least one player betting
       // Hand might be over soon.
-      return 1.5;
+      return 1.0;
     }
   } else {
     // User seated, seated and active non-playing opponents
