@@ -211,6 +211,50 @@ void CHandHistoryWriter::UpdateOnHandreset() {
 	PlayerPotShow[7] = false;
 	PlayerPotShow[8] = false;
 	PlayerPotShow[9] = false;
+	PlayerShowDown[0] = false;
+	PlayerShowDown[1] = false;
+	PlayerShowDown[2] = false;
+	PlayerShowDown[3] = false;
+	PlayerShowDown[4] = false;
+	PlayerShowDown[5] = false;
+	PlayerShowDown[6] = false;
+	PlayerShowDown[7] = false;
+	PlayerShowDown[8] = false;
+	PlayerShowDown[9] = false;
+	PlayerNames[0] = "";
+	PlayerNames[1] = "";
+	PlayerNames[2] = "";
+	PlayerNames[3] = "";
+	PlayerNames[4] = "";
+	PlayerNames[5] = "";
+	PlayerNames[6] = "";
+	PlayerNames[7] = "";
+	PlayerNames[8] = "";
+	PlayerNames[9] = "";
+	PlayerCards[0] = "";
+	PlayerCards[1] = "";
+	PlayerCards[2] = "";
+	PlayerCards[3] = "";
+	PlayerCards[4] = "";
+	PlayerCards[5] = "";
+	PlayerCards[6] = "";
+	PlayerCards[7] = "";
+	PlayerCards[8] = "";
+	PlayerCards[9] = "";
+	PlayerCollect[0] = false;
+	PlayerCollect[1] = false;
+	PlayerCollect[2] = false;
+	PlayerCollect[3] = false;
+	PlayerCollect[4] = false;
+	PlayerCollect[5] = false;
+	PlayerCollect[6] = false;
+	PlayerCollect[7] = false;
+	PlayerCollect[8] = false;
+	PlayerCollect[9] = false;
+	
+
+
+
 
 
 
@@ -227,11 +271,11 @@ void CHandHistoryWriter::UpdateOnNewRound() {
 		int nchairs = p_tablemap->nchairs();
 		int betround = p_betround_calculator->betround();
 		int nplayeractive = p_engine_container->symbol_engine_active_dealt_playing()->nplayersactive();
-		long int sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
-		long int bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
-		long int ante = p_engine_container->symbol_engine_tablelimits()->ante();
+		double sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
+		double bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
+		double ante = p_engine_container->symbol_engine_tablelimits()->ante();
 		int nopponentsdealt = p_engine_container->symbol_engine_active_dealt_playing()->nopponentsdealt();
-		long int pot = p_engine_container->symbol_engine_chip_amounts()->pot();
+		double pot = p_engine_container->symbol_engine_chip_amounts()->pot();
 
 
 		ofstream outfile;
@@ -247,18 +291,27 @@ void CHandHistoryWriter::UpdateOnNewRound() {
 		int last_chair = (2 * nchairs) + (dealerchair);
 		int first_chair = (nchairs + dealerchair + 1);
 		for (int i = first_chair; i <= last_chair; ++i) {
-			long int balance = p_table_state->Player(i % nchairs)->_balance.GetValue();
-			long int currentbet = PlayerStack[i % nchairs] - balance + PreviusBet[i % nchairs];
+			double balance = p_table_state->Player(i % nchairs)->_balance.GetValue();
+			double currentbet = PlayerStack[i % nchairs] - balance + PreviusBet[i % nchairs];
+			// CALL ULTIMO JOGADOR
+			if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && PlayerStack[i % nchairs] > balance && PreviusBet[i % nchairs] != MaxBet && !IsAllWin[i % nchairs]) {
+				TotalBetsOnGame += PlayerStack[i % nchairs] - balance;
+				outfile << PlayerNames[i % nchairs] << " calls [" << PlayerStack[i % nchairs] - balance << "] - NewRound" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
+				PreviusBet[i % nchairs] = currentbet;
+				PlayerStack[i % nchairs] = balance;
+				Actions[i % nchairs]++;
+				QtyActionsRound++;
+			}
 			// FOLD LAST PLAYER
-			if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && QtyPlaying >= 1 && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0 && MaxActions > 0) {
+			else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && QtyPlaying >= 1 && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0 && MaxActions > 0) {
 				HasFolded[i % nchairs] = true;
-				outfile << p_table_state->Player(i % nchairs)->name() << " folds - Last Player" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << endl;
+				outfile << PlayerNames[i % nchairs] << " folds - Last Player" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 				QtyPlaying--;
 			}
 			// ALLWIN ULTIMO JOGADOR
-			else if (!HasFolded[i % nchairs] && (balance == 0) && PlayerStartRound[i & nchairs] && !IsAllWin[i % nchairs] && currentbet > PreviusBet[i % nchairs]) {
+			else if (!HasFolded[i % nchairs] && (balance == 0) && PlayerStartRound[i % nchairs] && !IsAllWin[i % nchairs] && currentbet > PreviusBet[i % nchairs] && PlayerStack[i % nchairs] > 0) {
 				TotalBetsOnGame += PlayerStack[i % nchairs] - balance;
-				outfile << p_table_state->Player(i % nchairs)->name() << " is all-In [" << PlayerStack[i % nchairs] - balance << "] - NewRound" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << balance << " Balance=" << balance << endl;
+				outfile << PlayerNames[i % nchairs] << " is all-In [" << PlayerStack[i % nchairs] - balance << "] - NewRound" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 				PreviusBet[i % nchairs] = currentbet;
 				PlayerStack[i % nchairs] = balance;
 				QtyAllwin++;
@@ -273,28 +326,18 @@ void CHandHistoryWriter::UpdateOnNewRound() {
 					MaxActions = Actions[i % nchairs];
 				}
 			}
-			// CHECK ULTIMO JOGADOR
-			else if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && PreviusBet[i % nchairs] == MaxBet && !IsAllWin[i % nchairs] && Actions[i % nchairs] < MaxActions) {
-				outfile << p_table_state->Player(i % nchairs)->name() << " checks - NewRound" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << endl;
+			// CHECK ULTIMO JOGADOR PREFLOP
+			else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && (PreviusBet[i % nchairs] == MaxBet && betround == 0) && !IsAllWin[i % nchairs] && Actions[i % nchairs] < MaxActions) {
+				outfile << PlayerNames[i % nchairs] << " checks - NewRound" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 				Actions[i % nchairs]++;
 				QtyActionsRound++;
 			}
-			// CALL ULTIMO JOGADOR
-			else if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && PreviusBet[i % nchairs] < MaxBet && !IsAllWin[i % nchairs]) {
-				TotalBetsOnGame += MaxBet - PreviusBet[i % nchairs];
-				outfile << p_table_state->Player(i % nchairs)->name() << " calls [" << MaxBet - PreviusBet[i % nchairs] << "] - NewRound" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << MaxBet - PreviusBet[i % nchairs] << " Balance=" << balance << endl;
-				PreviusBet[i % nchairs] = currentbet;
-				PlayerStack[i % nchairs] = balance;
-				Actions[i % nchairs]++;
-				QtyActionsRound++;
-			}
+
 			// CHECK ALL PLAYERS
-			else if (!ShowAllinCards() && MaxBet == 0 && !HasFolded[i % nchairs] && MaxActions == 0 && PlayerStartRound[i & nchairs]) {
-				if(!IsAllWin[i % nchairs]){
-				outfile << p_table_state->Player(i % nchairs)->name() << " checks - all check NewRound" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << endl;
+			else if (!ShowAllinCards() && MaxBet == 0 && !HasFolded[i % nchairs] && MaxActions == 0 && PlayerStartRound[i % nchairs]) {
+				outfile << PlayerNames[i % nchairs] << " checks - all check NewRound" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 				Actions[i % nchairs]++;
 				QtyActionsRound++;
-				}
 			}
 
 
@@ -386,13 +429,13 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 	int dealerchair = p_engine_container->symbol_engine_dealerchair()->dealerchair();
 	int nchairs = p_tablemap->nchairs();
 	int nplayeractive = p_engine_container->symbol_engine_active_dealt_playing()->nplayersactive();
-	long int sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
-	long int bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
-	long int ante = p_engine_container->symbol_engine_tablelimits()->ante();
+	double sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
+	double bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
+	double ante = p_engine_container->symbol_engine_tablelimits()->ante();
 	int nopponentsdealt = p_engine_container->symbol_engine_active_dealt_playing()->nopponentsdealt();
 	int last_chair = (2 * nchairs) + (dealerchair);
 	int first_chair = (nchairs + dealerchair + 1);
-	long int pot = p_engine_container->symbol_engine_chip_amounts()->pot();
+	double pot = p_engine_container->symbol_engine_chip_amounts()->pot();
 
 
 	ofstream outfile;
@@ -403,7 +446,7 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 	outfile.open(s.c_str(), fstream::app);
 	outfile.precision(2);
 	outfile.setf(ios::fixed, ios::floatfield);
-	if ((!Step1) && DealPhase() && (betround >= kBetroundPreflop) && (p_table_state->Player(userchair)->hole_cards(1)->IsKnownCard())) {
+	if ((!Step1) && DealPhase() && (betround >= kBetroundPreflop) && (p_table_state->Player(dealerchair)->hole_cards(1)->IsAnyCard()) && p_table_state->Player(dealerchair)->name() != "") {
 
 		outfile << "Game #" << HandNumber << " starts." << endl; // << p_handreset_detector->GetHandNumber()
 		outfile << endl;
@@ -422,38 +465,42 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 		outfile << "Total number of players : " << nplayeractive << "/" << nchairs << endl;
 		for (int i = 0; i < nchairs; ++i) {
 			int chair = i;
-			long int balance = p_table_state->Player(i)->_balance.GetValue();
+			double balance = p_table_state->Player(i)->_balance.GetValue();
 			if (p_table_state->Player(i)->seated()) {
-				if (IsBigBlind[i % nchairs]) {
-					outfile << "Seat " << (i + 1) << ": " << p_table_state->Player(chair)->name() << " ( " << balance + bblind + ante << " ) " << endl;
-					QtyPlaying++;
-					PlayerStartRound[i] = true;
+				if (IsBigBlind[i]) {
+					outfile << "Seat " << (i + 1) << ": " << p_table_state->Player(chair)->name() << " ( " << balance + bblind + ante << " ) " << " QtyPlayer=" << QtyPlaying << endl;
 					PlayerStack[i] = balance + bblind + ante;
+					PlayerNames[i] = p_table_state->Player(chair)->name();
+					
+					
 				}
-				else if (IsSmallBlind[i % nchairs]) {
-					outfile << "Seat " << (i + 1) << ": " << p_table_state->Player(chair)->name() << " ( " << balance + sblind + ante << " ) " << endl;
-					QtyPlaying++;
-					PlayerStartRound[i] = true;
+				else if (IsSmallBlind[i]) {
+					outfile << "Seat " << (i + 1) << ": " << p_table_state->Player(chair)->name() << " ( " << balance + sblind + ante << " ) " << " QtyPlayer=" << QtyPlaying << endl;
 					PlayerStack[i] = balance + sblind + ante;
+					PlayerNames[i] = p_table_state->Player(chair)->name();
+					
+					
 				}
-				else
-					outfile << "Seat " << (i + 1) << ": " << p_table_state->Player(chair)->name() << " ( " << balance + ante << " ) " << endl;
-				QtyPlaying++;
-				PlayerStartRound[i] = true;
+				else if(!IsSmallBlind[i] && !IsBigBlind[i])
+				outfile << "Seat " << (i + 1) << ": " << p_table_state->Player(chair)->name() << " ( " << balance + ante << " ) " << " QtyPlayer=" << QtyPlaying << endl;
 				PlayerStack[i] = balance + ante;
+				PlayerNames[i] = p_table_state->Player(chair)->name();
+				
+				
 			}
 		}
 		outfile << "Trny:" << torneio << " Level:7 " << endl;
 		outfile << "Blinds-Antes(" << sblind << "/" << bblind << " -" << ante << ")" << endl;
 
 		for (int i = 0; i < nchairs; ++i) {
-			long int balance = p_table_state->Player(i)->_balance.GetValue();
+			double balance = p_table_state->Player(i)->_balance.GetValue();
 			int chair = i;
-			if (PlayerStartRound[i] && (p_engine_container->symbol_engine_tablelimits()->ante() > 0)) {
+			if (p_table_state->Player(i)->seated() && p_engine_container->symbol_engine_tablelimits()->ante() > 0) {
 				TotalBetsOnGame += ante;
 				PlayerStack[i] -= ante;
-				outfile << p_table_state->Player(chair)->name() << " posts ante [" << ante << "]" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << endl;
-
+				outfile << PlayerNames[chair] << " posts ante [" << ante << "]" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
+				QtyPlaying++;
+				PlayerStartRound[i] = true; 
 			}
 
 		}
@@ -471,14 +518,14 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 		outfile.precision(2);
 		outfile.setf(ios::fixed, ios::floatfield);
 		for (int i = first_chair; i <= last_chair; ++i) {
-			long int balance = p_table_state->Player(i % nchairs)->_balance.GetValue();
-			long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+			double balance = p_table_state->Player(i % nchairs)->_balance.GetValue();
+			double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
 			if (IsSmallBlind[i % nchairs]) {
 				TotalBetsOnGame += sblind;
 				PreviusBet[i % nchairs] = sblind;
 				IsSmallBlind[i % nchairs] = true;
-				outfile << p_table_state->Player(i % nchairs)->name() << " posts small blind [" << sblind << "]." << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << endl;
-				
+				outfile << PlayerNames[i % nchairs] << " posts small blind [" << sblind << "]." << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
+
 
 
 			}
@@ -488,37 +535,39 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 				BigBlindFound = true;
 				PreviusBet[i % nchairs] = bblind;
 				IsBigBlind[i % nchairs] = true;
-				outfile << p_table_state->Player(i % nchairs)->name() << " posts big blind [" << bblind << "]." << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << endl;
-				
-				
+				outfile << PlayerNames[i % nchairs] << " posts big blind [" << bblind << "]." << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
+
+
 
 
 			}
 		}
 		if (SmallBlindFound && BigBlindFound) {
 			outfile << "** Dealing down cards **" << endl;
-			outfile << "Dealt to " << p_table_state->Player(userchair)->name() << " [  " << p_table_state->Player(userchair)->hole_cards(0)->ToString() << " " << p_table_state->Player(userchair)->hole_cards(1)->ToString() << " ]" << endl;
-			Round_First_Chair = dealerchair + nchairs + 1;
-			Round_Last_Chair = (2 * nchairs) + (dealerchair);
+			if (CheckUser()) {
+				outfile << "Dealt to " << p_table_state->Player(UserChair)->name() << " [  " << p_table_state->Player(UserChair)->hole_cards(0)->ToString() << " " << p_table_state->Player(UserChair)->hole_cards(1)->ToString() << " ]" << endl;
+				PlayerCards[UserChair] = " [ " + p_table_state->Player(UserChair)->hole_cards(0)->ToString() + " , " + p_table_state->Player(UserChair)->hole_cards(1)->ToString() + " ]";
+				
+			}
 			Step2 = true;
 		}
 	}
 	// SCAN PLAYERS
 	if (Step2) {
 		for (int i = first_chair; i <= last_chair; ++i) {
-			long int balance = p_table_state->Player(i % nchairs)->_balance.GetValue();
-			long int currentbet = PlayerStack[i % nchairs] - balance + PreviusBet[i % nchairs];
-
+			double balance = p_table_state->Player(i % nchairs)->_balance.GetValue();
+			double currentbet = PlayerStack[i % nchairs] - balance + PreviusBet[i % nchairs];
+			Showdown();
 			//WINNER
 			if (Winner()) {
 				if (!FinalWinnerScan) {
 					for (int i = first_chair; i <= last_chair; ++i) {
-						long int balance = p_table_state->Player(i)->_balance.GetValue();
-						long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						double balance = p_table_state->Player(i)->_balance.GetValue();
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
 						// CALL ULTIMO JOGADOR
-						if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && (pot == TotalBetsOnGame + MaxBet - PreviusBet[i % nchairs]) && !IsAllWin[i % nchairs] && MaxActions > 0 && Actions[i % nchairs] <= MaxActions && PreviusBet[i % nchairs] != MaxBet) {
-							TotalBetsOnGame += (PlayerStack[i % nchairs] - balance);
-							outfile << p_table_state->Player(i % nchairs)->name() << " calls [" << MaxBet - PreviusBet[i % nchairs] << "] - Winner Call" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << endl;
+						if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && (pot - TotalBetsOnGame == MaxBet - PreviusBet[i % nchairs]) && !IsAllWin[i % nchairs] && MaxActions > 0 && Actions[i % nchairs] <= MaxActions && PreviusBet[i % nchairs] != MaxBet) {
+							TotalBetsOnGame += MaxBet - PreviusBet[i % nchairs];
+							outfile << PlayerNames[i % nchairs] << " calls [" << MaxBet - PreviusBet[i % nchairs] << "] - Winner Call" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 							PreviusBet[i % nchairs] = currentbet;
 							PlayerStack[i % nchairs] = balance;
 							Actions[i % nchairs]++;
@@ -526,9 +575,9 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 
 						}
 						// ALLWIN ULTIMO JOGADOR
-						else if (!HasFolded[i % nchairs] && (p_table_state->Player(i % nchairs)->_balance.GetValue() == 0) && PlayerStartRound[i & nchairs] && !IsAllWin[i % nchairs] && currentbet > PreviusBet[i % nchairs]) {
+						else if (!HasFolded[i % nchairs] && (p_table_state->Player(i % nchairs)->_balance.GetValue() == 0) && PlayerStartRound[i % nchairs] && !IsAllWin[i % nchairs] && currentbet > PreviusBet[i % nchairs] && PlayerStack[i % nchairs]>0) {
 							TotalBetsOnGame += PlayerStack[i % nchairs];
-							outfile << p_table_state->Player(i % nchairs)->name() << " is all-In [" << PlayerStack[i % nchairs] << "] - Winner All-in" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << endl;
+							outfile << PlayerNames[i % nchairs] << " is all-In [" << PlayerStack[i % nchairs] << "] - Winner All-in" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 							PreviusBet[i % nchairs] = currentbet;
 							PlayerStack[i % nchairs] = balance;
 							QtyAllwin++;
@@ -536,24 +585,22 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 							QtyActionsRound++;
 
 						}
-						// CHECK ULTIMO JOGADOR
-						else if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && PreviusBet[i % nchairs] == MaxBet && !IsAllWin[i % nchairs] && Actions[i % nchairs] < MaxActions) {
-							outfile << p_table_state->Player(i % nchairs)->name() << " checks - Winner Check" << endl;
+						// CHECK ULTIMO JOGADOR PREFLOP
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && (PreviusBet[i % nchairs] == MaxBet && betround == 0) && !IsAllWin[i % nchairs] && Actions[i % nchairs] < MaxActions) {
+							outfile << PlayerNames[i % nchairs] << " checks - Winner Check" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 							Actions[i % nchairs]++;
 							QtyActionsRound++;
 						}
 						// CHECK ALL PLAYERS
-						else if (!ShowAllinCards() && MaxBet == 0 && !HasFolded[i % nchairs] && MaxActions == 0 && PlayerStartRound[i & nchairs]) {
-							if (!IsAllWin[i % nchairs]) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " checks - Winner all check" << "ShowAllinCards=" << ShowAllinCards() << endl;
-								Actions[i % nchairs]++;
-								QtyActionsRound++;
-							}
+						else if (!ShowAllinCards() && MaxBet == 0 && !HasFolded[i % nchairs] && MaxActions == 0 && PlayerStartRound[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " checks - Winner all check" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
+							Actions[i % nchairs]++;
+							QtyActionsRound++;
 						}
 						// FOLD LAST PLAYER
-						else if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0) {
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0) {
 							HasFolded[i % nchairs] = true;
-							outfile << p_table_state->Player(i % nchairs)->name() << " folds - Winner fold" << " PreviusBet=" << PreviusBet[i % nchairs] << endl;
+							outfile << PlayerNames[i % nchairs] << " folds - Winner fold" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 							QtyPlaying--;
 						}
 
@@ -562,106 +609,133 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 				}
 				if (QtyWinnerPots == 1) {
 					for (int i = first_chair; i <= last_chair; ++i) {
-						long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
-						if (!HasFolded[i % nchairs] && p_table_state->Player(i % nchairs)->hole_cards(0)->IsKnownCard() && p_table_state->Player(i % nchairs)->hole_cards(1)->IsKnownCard()) {
-							outfile << p_table_state->Player(i % nchairs)->name() << " shows [ " << p_table_state->Player(i % nchairs)->hole_cards(0)->ToString() << ", " << p_table_state->Player(i % nchairs)->hole_cards(1)->ToString() << " ]chips with  a straight flush, Nine to King." << endl;
-							HasFolded[i % nchairs] = true;
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && !PlayerShowDown[i % nchairs] && PlayerCollect[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " shows "<< PlayerCards[i % nchairs] << "  chips with  a straight flush, Nine to King." << endl;
+							PlayerShowDown[i % nchairs] = true;
+							
 						}
-						if (PlayerWinner[i % nchairs] && !PlayerPotShow[i % nchairs]) {
-							outfile << p_table_state->Player(i % nchairs)->name() << " wins " << pot << " chips from the side main pot with  a straight flush, Nine to King." << " Pot=" << pot << " MaxBet=" << MaxBet << " PreviusBet=" << PreviusBet[i % nchairs] << " PotVsTotalBet=" << PotVsTotalBet()<< "Qtypots="<< QtyWinnerPots << endl;
+
+					}
+					for (int i = first_chair; i <= last_chair; ++i) {
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && PlayerWinner[i % nchairs] && !PlayerPotShow[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " wins " << TotalBetsOnGame << " chips from the side main pot with  a straight flush, Nine to King." << " Pot=" << pot << " MaxBet=" << MaxBet << " PreviusBet=" << PreviusBet[i % nchairs] << " PotVsTotalBet=" << PotVsTotalBet() << "Qtypots=" << QtyWinnerPots << endl;
 							PlayerPotShow[i % nchairs] = true;
 						}
+
 					}
-					
 					Finish = true;
 				}
 				if (QtyWinnerPots == 2) {
 					for (int i = first_chair; i <= last_chair; ++i) {
-						long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
-						if (!HasFolded[i % nchairs] && p_table_state->Player(i % nchairs)->hole_cards(0)->IsKnownCard() && p_table_state->Player(i % nchairs)->hole_cards(1)->IsKnownCard()) {
-							outfile << p_table_state->Player(i % nchairs)->name() << " shows [ " << p_table_state->Player(i % nchairs)->hole_cards(0)->ToString() << ", " << p_table_state->Player(i % nchairs)->hole_cards(1)->ToString() << " ]chips with  a straight flush, Nine to King." << endl;
-							HasFolded[i % nchairs] = true;
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && !PlayerShowDown[i % nchairs] && PlayerCollect[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " shows " << PlayerCards[i % nchairs] << "  chips with  a straight flush, Nine to King." << endl;
+							PlayerShowDown[i % nchairs] = true;
 
-							if (!MinWinnerShow && PlayerWinner[i % nchairs] && currentbet == MinWinnerPots && !PlayerPotShow[i % nchairs]) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MinWinnerPots << " chips from the side pot 1 with  a straight flush, Nine to King." <<"QtyPots="<<QtyWinnerPots<< endl;
-								MinWinnerShow = true;
-								PlayerPotShow[i % nchairs] = true;
-							}
-							if (!MaxWinnerShow && PlayerWinner[i % nchairs] && currentbet == MaxWinnerPots && !PlayerPotShow[i % nchairs]) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MaxWinnerPots << " chips from the main pot with  a straight flush, Nine to King." << endl;
-								MaxWinnerShow = true;
-								PlayerPotShow[i % nchairs] = true;
-							}
-							
 						}
 					}
-					
+					for (int i = first_chair; i <= last_chair; ++i) {
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !MinWinnerShow && PlayerWinner[i % nchairs] && currentbet == MinWinnerPots && !PlayerPotShow[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MinWinnerPots << " chips from the side pot 1 with  a straight flush, Nine to King." << "QtyPots=" << QtyWinnerPots << endl;
+							MinWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !MaxWinnerShow && PlayerWinner[i % nchairs] && currentbet == MaxWinnerPots && !PlayerPotShow[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MaxWinnerPots << " chips from the main pot with  a straight flush, Nine to King." << endl;
+							MaxWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+
+					}
 					Finish = true;
 				}
 				if (QtyWinnerPots == 3) {
 					for (int i = first_chair; i <= last_chair; ++i) {
-						long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
-						if (!HasFolded[i % nchairs] && p_table_state->Player(i % nchairs)->hole_cards(0)->IsKnownCard() && p_table_state->Player(i % nchairs)->hole_cards(1)->IsKnownCard()) {
-							outfile << p_table_state->Player(i % nchairs)->name() << " shows [ " << p_table_state->Player(i % nchairs)->hole_cards(0)->ToString() << ", " << p_table_state->Player(i % nchairs)->hole_cards(1)->ToString() << " ]chips with  a straight flush, Nine to King." << endl;
-							HasFolded[i % nchairs] = true;
-
-							if (PlayerWinner[i % nchairs] && currentbet == MinWinnerPots) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MinWinnerPots << " chips from the side pot 1 with  a straight flush, Nine to King." << endl;
-							}
-							if (PlayerWinner[i % nchairs] && currentbet == MiddleLowWinnerPots) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MiddleLowWinnerPots << " chips from the side pot 2 with  a straight flush, Nine to King." << endl;
-							}
-							if (PlayerWinner[i % nchairs] && currentbet == MaxWinnerPots) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MaxWinnerPots << " chips from the main pot with  a straight flush, Nine to King." << endl;
-							}
-							
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && !PlayerShowDown[i % nchairs] && PlayerCollect[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " shows " << PlayerCards[i % nchairs] << "  chips with  a straight flush, Nine to King." << endl;
+							PlayerShowDown[i % nchairs] = true;
 						}
 					}
-					
+					for (int i = first_chair; i <= last_chair; ++i) {
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !PlayerPotShow[i % nchairs] && !MinWinnerShow && PlayerWinner[i % nchairs] && currentbet == MinWinnerPots) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MinWinnerPots << " chips from the side pot 1 with  a straight flush, Nine to King." << endl;
+							MinWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !PlayerPotShow[i % nchairs] && !MiddleLowWinnerShow && PlayerWinner[i % nchairs] && currentbet == MiddleLowWinnerPots) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MiddleLowWinnerPots << " chips from the side pot 2 with  a straight flush, Nine to King." << endl;
+							MiddleLowWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !PlayerPotShow[i % nchairs] && !MaxWinnerShow && PlayerWinner[i % nchairs] && currentbet == MaxWinnerPots) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MaxWinnerPots << " chips from the main pot with  a straight flush, Nine to King." << endl;
+							MaxWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+
+
+					}
 					Finish = true;
 				}
 				if (QtyWinnerPots == 4) {
 					for (int i = first_chair; i <= last_chair; ++i) {
-						long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
-						if (!HasFolded[i % nchairs] && p_table_state->Player(i % nchairs)->hole_cards(0)->IsKnownCard() && p_table_state->Player(i % nchairs)->hole_cards(1)->IsKnownCard()) {
-							outfile << p_table_state->Player(i % nchairs)->name() << " shows [ " << p_table_state->Player(i % nchairs)->hole_cards(0)->ToString() << ", " << p_table_state->Player(i % nchairs)->hole_cards(1)->ToString() << " ]chips with  a straight flush, Nine to King." << endl;
-							
-							if (PlayerWinner[i % nchairs] && currentbet == MinWinnerPots) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MinWinnerPots << " chips from the side pot 1" << endl;
-							}
-							if (PlayerWinner[i % nchairs] && currentbet == MiddleLowWinnerPots) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MiddleLowWinnerPots << " chips from the side pot 2" << endl;
-							}
-							if (PlayerWinner[i % nchairs] && currentbet == MiddleHighWinnerPots) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MiddleHighWinnerPots << " chips from the side pot 3" << endl;
-							}
-							if (PlayerWinner[i % nchairs] && currentbet == MaxWinnerPots) {
-								outfile << p_table_state->Player(i % nchairs)->name() << " wins " << MaxWinnerPots << " chips from the main pot" << endl;
-							}
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && !PlayerShowDown[i % nchairs] && PlayerCollect[i % nchairs]) {
+							outfile << PlayerNames[i % nchairs] << " shows " << PlayerCards[i % nchairs] << "  chips with  a straight flush, Nine to King." << endl;
+							PlayerShowDown[i % nchairs] = true;
 						}
 					}
-					
+					for (int i = first_chair; i <= last_chair; ++i) {
+						double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+						if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !PlayerPotShow[i % nchairs] && !MinWinnerShow && PlayerWinner[i % nchairs] && currentbet == MinWinnerPots) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MinWinnerPots << " chips from the side pot 1" << endl;
+							MinWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !PlayerPotShow[i % nchairs] && !MiddleLowWinnerShow && PlayerWinner[i % nchairs] && currentbet == MiddleLowWinnerPots) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MiddleLowWinnerPots << " chips from the side pot 2" << endl;
+							MiddleLowWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !PlayerPotShow[i % nchairs] && !MiddleHighWinnerShow && PlayerWinner[i % nchairs] && currentbet == MiddleHighWinnerPots) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MiddleHighWinnerPots << " chips from the side pot 3" << endl;
+							MiddleHighWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+						else if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !PlayerPotShow[i % nchairs] && !MaxWinnerShow && PlayerWinner[i % nchairs] && currentbet == MaxWinnerPots) {
+							outfile << PlayerNames[i % nchairs] << " wins " << MaxWinnerPots << " chips from the main pot" << endl;
+							MaxWinnerShow = true;
+							PlayerPotShow[i % nchairs] = true;
+						}
+
+					}
 					Finish = true;
 				}
 			}
+			//SCAN - FOLD
+			else if (!ShowAllinCards() && !HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && QtyPlaying >= 1 && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0) {
+				HasFolded[i % nchairs] = true;
+				outfile << PlayerNames[i % nchairs] << " folds - Scan Fold" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
+				QtyPlaying--;
+			}
 			//SCAN - ALLWIN
-			else if (!ShowAllinCards() && !HasFolded[i % nchairs] && (balance == 0) && PlayerStartRound[i & nchairs] && !IsAllWin[i % nchairs] && currentbet > PreviusBet[i % nchairs]) {
+			else if (!ShowAllinCards() && !HasFolded[i % nchairs] && (balance == 0) && PlayerStartRound[i % nchairs] && !IsAllWin[i % nchairs] && currentbet > PreviusBet[i % nchairs] && PlayerStack[i % nchairs] > 0) {
 				ActualChair = i;
 				for (i = first_chair; i < ActualChair; ++i) {
-					if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && QtyPlaying >= 1 && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0) {
-						HasFolded[i % nchairs] = true;
-						outfile << p_table_state->Player(i % nchairs)->name() << " folds - Scan Allwin" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << endl;
-						QtyPlaying--;
-					}
-					if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !IsAllWin[i % nchairs] && Actions[i % nchairs] == Actions[ActualChair % nchairs] && !IsSmallBlind[i % nchairs] && !IsBigBlind[i % nchairs]) {
-						outfile << p_table_state->Player(i % nchairs)->name() << " checks - Scan Allwin" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << endl;
+					if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !IsAllWin[i % nchairs] && Actions[i % nchairs] == Actions[ActualChair % nchairs] && !IsSmallBlind[i % nchairs] && !IsBigBlind[i % nchairs]) {
+						outfile << PlayerNames[i % nchairs] << " checks - Scan Allwin" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 						Actions[i % nchairs]++;
 						QtyActionsRound++;
 					}
 
 				}
 				TotalBetsOnGame += PlayerStack[i % nchairs] - balance;
-				outfile << p_table_state->Player(i % nchairs)->name() << " is all-In [" << PlayerStack[i % nchairs] << "]" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << balance << " Balance=" << balance << endl;
+				outfile << PlayerNames[i % nchairs] << " is all-In [" << PlayerStack[i % nchairs] << "]" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 				PreviusBet[i % nchairs] = currentbet;
 				PlayerStack[i % nchairs] = balance;
 				IsAllWin[i % nchairs] = true;
@@ -677,23 +751,18 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 				}
 			}
 			//SCAN - CALL
-			else if (!ShowAllinCards() && !HasFolded[i % nchairs] && (currentbet != PreviusBet[i % nchairs]) && currentbet != 0 && (currentbet == MaxBet) && PlayerStartRound[i & nchairs]) {
+			else if (!ShowAllinCards() && !HasFolded[i % nchairs] && (currentbet != PreviusBet[i % nchairs]) && currentbet != 0 && (currentbet == MaxBet) && PlayerStartRound[i % nchairs]) {
 				ActualChair = i;
 				for (i = first_chair; i < ActualChair; ++i) {
-					if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && QtyPlaying >= 1 && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0) {
-						HasFolded[i % nchairs] = true;
-						outfile << p_table_state->Player(i % nchairs)->name() << " folds - Scan Call" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << endl;
-						QtyPlaying--;
-					}
-					if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !IsAllWin[i % nchairs] && Actions[i % nchairs] == Actions[ActualChair % nchairs] && !IsSmallBlind[i % nchairs] && !IsBigBlind[i % nchairs]) {
-						outfile << p_table_state->Player(i % nchairs)->name() << " checks - Scan Call" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << endl;
+					if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !IsAllWin[i % nchairs] && Actions[i % nchairs] == Actions[ActualChair % nchairs] && !IsSmallBlind[i % nchairs] && !IsBigBlind[i % nchairs]) {
+						outfile << PlayerNames[i % nchairs] << " checks - Scan Call" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 						Actions[i % nchairs]++;
 						QtyActionsRound++;
 					}
 
 				}
 				TotalBetsOnGame += MaxBet - PreviusBet[i % nchairs];
-				outfile << p_table_state->Player(i % nchairs)->name() << " calls [" << MaxBet - PreviusBet[i % nchairs] << "]" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << MaxBet - PreviusBet[i % nchairs] << " Balance=" << balance << endl;
+				outfile << PlayerNames[i % nchairs] << " calls [" << MaxBet - PreviusBet[i % nchairs] << "]" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 				PreviusBet[i % nchairs] = currentbet;
 				PlayerStack[i % nchairs] = balance;
 				Actions[i % nchairs]++;
@@ -703,23 +772,18 @@ void CHandHistoryWriter::UpdateOnHeartbeat() {
 				}
 			}
 			//SCAN - RAISES
-			else if (!ShowAllinCards() && !HasFolded[i % nchairs] && (currentbet != PreviusBet[i % nchairs]) && currentbet > MaxBet && currentbet > bblind && !IsAllWin[i % nchairs] && PlayerStartRound[i & nchairs]) {
+			else if (!ShowAllinCards() && !HasFolded[i % nchairs] && (currentbet != PreviusBet[i % nchairs]) && currentbet > MaxBet && currentbet > bblind && !IsAllWin[i % nchairs] && PlayerStartRound[i % nchairs]) {
 				ActualChair = i;
 				for (i = first_chair; i < ActualChair; ++i) {
-					if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !p_table_state->Player(i % nchairs)->HasAnyCards() && !IsAllWin[i % nchairs] && QtyPlaying >= 1 && PreviusBet[i % nchairs] != MaxBet && MaxBet > 0) {
-						HasFolded[i % nchairs] = true;
-						outfile << p_table_state->Player(i % nchairs)->name() << " folds - Scan Raises" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << endl;
-						QtyPlaying--;
-					}
-					if (!HasFolded[i % nchairs] && PlayerStartRound[i & nchairs] && !IsAllWin[i % nchairs] && Actions[i % nchairs] == Actions[ActualChair % nchairs] && !IsSmallBlind[i % nchairs] && !IsBigBlind[i % nchairs]) {
-						outfile << p_table_state->Player(i % nchairs)->name() << " checks - Scan Raises" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << endl;
+					if (!HasFolded[i % nchairs] && PlayerStartRound[i % nchairs] && !IsAllWin[i % nchairs] && Actions[i % nchairs] == Actions[ActualChair % nchairs] && !IsSmallBlind[i % nchairs] && !IsBigBlind[i % nchairs]) {
+						outfile << PlayerNames[i % nchairs] << " checks - Scan Raises" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 						Actions[i % nchairs]++;
 						QtyActionsRound++;
 					}
 
 				}
 				TotalBetsOnGame += PlayerStack[i % nchairs] - balance;
-				outfile << p_table_state->Player(i % nchairs)->name() << " raises [" << PlayerStack[i%nchairs] - balance << "]" << " TotalBetonGame=" << TotalBetsOnGame << " PreviusBet=" << PreviusBet[i % nchairs] << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] - balance << " Balance=" << balance << endl;
+				outfile << PlayerNames[i % nchairs] << " raises [" << PlayerStack[i % nchairs] - balance << "]" << " PreviusBet=" << PreviusBet[i % nchairs] << " TotalBetonGame=" << TotalBetsOnGame << " Pot=" << pot << " PlayerStack=" << PlayerStack[i % nchairs] << " Balance=" << balance << " QtyPlayer=" << QtyPlaying << " PotVsTotalBet=" << PotVsTotalBet() << endl;
 				PreviusBet[i % nchairs] = currentbet;
 				PlayerStack[i % nchairs] = balance;
 				MaxBet = currentbet;
@@ -808,7 +872,7 @@ const string CHandHistoryWriter::setDate()
 	curr_tm = localtime(&curr_time);
 
 	strftime(date_string, 50, "%A, %B %d,", curr_tm);
-	strftime(time_string, 50, " %T PDT %Y", curr_tm);
+	strftime(time_string, 50, " %T BRT %Y", curr_tm);
 
 	ss << date_string << time_string;
 
@@ -819,16 +883,38 @@ const string CHandHistoryWriter::setDate()
 }
 
 bool CHandHistoryWriter::ShowAllinCards() {
-
+	int QtyShowCards = 0;
+	int nchairs = p_tablemap->nchairs();
 	if (QtyAllwin + 1 >= QtyPlaying) {
-		return true;
-	}
-	else return false;
+		for (int i = 0; i < nchairs; ++i) {
+			if (PreviusBet[i % nchairs]==MaxBet && Actions[i%nchairs] == MaxActions && MaxActions !=0 || IsAllWin[i % nchairs]) {
+				QtyShowCards++;
+				}
+			else return false;
+			}
 
+		if (QtyShowCards == QtyPlaying) {
+			return true;
+			}
+		else return false;
+		}
+	else return false;		
+}
+	
+void CHandHistoryWriter::Showdown() {
+	
+	int nchairs = p_tablemap->nchairs();
+	for (int i = 0; i < nchairs; ++i) {
+		if (!HasFolded[i % nchairs] && !PlayerCollect[i % nchairs] && !PlayerShowDown[i % nchairs] && p_table_state->Player(i % nchairs)->hole_cards(0)->IsKnownCard() && p_table_state->Player(i % nchairs)->hole_cards(1)->IsKnownCard()) {
+			PlayerCards[i % nchairs] = " [ " + p_table_state->Player(i % nchairs)->hole_cards(0)->ToString() + " , " + p_table_state->Player(i % nchairs)->hole_cards(1)->ToString() + " ]";
+			PlayerCollect[i % nchairs] = true;
+		}
+	}
 }
 
+
 bool CHandHistoryWriter::PotVsTotalBet() {
-	long int pot = p_engine_container->symbol_engine_chip_amounts()->pot();
+	double pot = p_engine_container->symbol_engine_chip_amounts()->pot();
 
 	if (TotalBetsOnGame == pot) {
 		return true;
@@ -841,13 +927,13 @@ bool CHandHistoryWriter::DealPhase() {
 
 	int dealerchair = p_engine_container->symbol_engine_dealerchair()->dealerchair();
 	int nchairs = p_tablemap->nchairs();
-	long int sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
-	long int bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
-	long int ante = p_engine_container->symbol_engine_tablelimits()->ante();
+	double sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
+	double bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
+	double ante = p_engine_container->symbol_engine_tablelimits()->ante();
 	int last_chair = (2 * nchairs) + (dealerchair);
 	int first_chair = (nchairs + dealerchair + 1);
 	for (int i = first_chair; i <= last_chair; ++i) {
-		long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+		double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
 		if (currentbet == sblind) {
 			SmallBlindFound = true;
 			PreviusBet[i % nchairs] = sblind;
@@ -877,10 +963,10 @@ bool CHandHistoryWriter::Winner() {
 	int last_chair = (2 * nchairs) + (dealerchair);
 	int first_chair = (nchairs + dealerchair + 1);
 	int nplayeractive = p_engine_container->symbol_engine_active_dealt_playing()->nplayersactive();
-	long int ante = p_engine_container->symbol_engine_tablelimits()->ante();
-	long int sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
-	long int bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
-	long int pot = p_engine_container->symbol_engine_chip_amounts()->pot();
+	double ante = p_engine_container->symbol_engine_tablelimits()->ante();
+	double sblind = p_engine_container->symbol_engine_tablelimits()->sblind();
+	double bblind = p_engine_container->symbol_engine_tablelimits()->bblind();
+	double pot = p_engine_container->symbol_engine_chip_amounts()->pot();
 	int betround = p_betround_calculator->betround();
 	WinnerPots = 0;
 	QtyWinnerPots = 0;
@@ -900,7 +986,8 @@ bool CHandHistoryWriter::Winner() {
 	PlayerWinner[9] = false;
 
 	for (int i = first_chair; i <= last_chair; ++i) {
-		long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+		double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+		double balance = p_table_state->Player(i % nchairs)->_balance.GetValue();
 		if (currentbet > 0 && !PlayerWinner[i % nchairs]) {
 			WinnerPots += currentbet;
 			QtyWinnerPots++;
@@ -912,9 +999,14 @@ bool CHandHistoryWriter::Winner() {
 				MinWinnerPots = currentbet;
 			}
 		}
+//		if (currentbet == pot && !PlayerWinner[i % nchairs] || balance - PlayerStack[i % nchairs] == pot && !PlayerWinner[i % nchairs] || QtyPlaying == 1) {
+//			QtyWinnerPots = 1;
+//			PlayerWinner[i % nchairs] = true;
+//			return true;
+//		}
 	}
 	for (int i = first_chair; i <= last_chair; ++i) {
-		long int currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
+		double currentbet = p_table_state->Player(i % nchairs)->_bet.GetValue();
 		if (PlayerWinner[i % nchairs] && currentbet != MinWinnerPots && currentbet != MaxWinnerPots) {
 			//Qty3
 			if (currentbet <= MiddleLowWinnerPots) {
@@ -926,10 +1018,27 @@ bool CHandHistoryWriter::Winner() {
 			}
 		}
 	}
-	if (pot == WinnerPots && pot >= (bblind + sblind + ante * nplayeractive) && pot > 0 && betround > 0) {
+	if ((pot == WinnerPots && pot > (bblind + sblind + ante * nplayeractive) && pot > 0 && betround > 0) || (pot == WinnerPots && pot >= (bblind + sblind + ante * nplayeractive) && pot > 0 && QtyWinnerPots == 1)) {
 		return true;
 	}
 	else return false;
+}
+
+bool CHandHistoryWriter::CheckUser() {
+	int nchairs = p_tablemap->nchairs();
+	bool d = false;
+	for (int i = 0; i < nchairs; ++i) {
+		if (p_table_state->Player(i % nchairs)->hole_cards(0)->IsKnownCard() && p_table_state->Player(i % nchairs)->hole_cards(1)->IsKnownCard()) {
+			UserChair = (i % nchairs);
+			d = true;
+		}
+
+	}
+	if (d) {
+		return true;
+	}
+	else return false;
+
 }
 
 const string CHandHistoryWriter::TornamentName() {
